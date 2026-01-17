@@ -1,0 +1,24 @@
+# --- OS & Editor Files (Junk) ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Backend (Go) ---
+# Ignore the actual compiled executable (you don't commit binaries)
+*.exe
+*.dll
+main    # for Mac/Linux binaries
+
+# Ignore your local database file (CRITICAL)
+backend/vectors.json
+
+# Ignore API Keys / Secrets if you use them later
+*.env
+backend/.env
+
+# --- Frontend ---
+# If you ever switch to React/Node.js, these are standard:
+frontend/node_modules/
+frontend/dist/
+frontend/build/

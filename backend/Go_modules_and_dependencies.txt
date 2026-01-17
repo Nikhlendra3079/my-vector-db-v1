@@ -1,0 +1,4 @@
+go mod init my-vector-db
+
+go get github.com/gin-gonic/gin
+go get github.com/edsrzf/mmap-go

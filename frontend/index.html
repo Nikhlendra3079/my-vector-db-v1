@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Vector DB</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; background: #f4f4f9; }
+        .card { background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        h2 { margin-top: 0; }
+        input, button { padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
+        input { width: 70%; }
+        button { background: #007bff; color: white; border: none; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .result-item { border-bottom: 1px solid #eee; padding: 10px 0; }
+        .score { color: #28a745; font-weight: bold; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>1. Teach the AI (Add Data)</h2>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="factInput" placeholder="E.g., 'The Eiffel Tower is in Paris'">
+            <button onclick="addFact()">Add Fact</button>
+        </div>
+        <p id="addStatus" style="color: gray; margin-top: 10px;"></p>
+    </div>
+
+    <div class="card">
+        <h2>2. Ask the AI (Semantic Search)</h2>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="queryInput" placeholder="E.g., 'Where is that famous tower?'">
+            <button onclick="searchDB()">Ask</button>
+        </div>
+        <div id="resultsArea" style="margin-top: 20px;"></div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:8080";
+
+        async function addFact() {
+            const text = document.getElementById('factInput').value;
+            if (!text) return;
+
+            const status = document.getElementById('addStatus');
+            status.innerText = "Generating embedding...";
+
+            try {
+                // Generate a random ID for simplicity
+                const id = "doc-" + Date.now();
+                
+                const response = await fetch(`${API_URL}/add`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: id, text: text })
+                });
+
+                if (response.ok) {
+                    status.innerText = "✅ Saved to Vector DB!";
+                    document.getElementById('factInput').value = ""; // Clear input
+                    setTimeout(() => status.innerText = "", 2000);
+                } else {
+                    status.innerText = "❌ Error saving data.";
+                }
+            } catch (e) {
+                status.innerText = "❌ Connection error: " + e;
+            }
+        }
+
+        async function searchDB() {
+            const text = document.getElementById('queryInput').value;
+            const resultsArea = document.getElementById('resultsArea');
+            resultsArea.innerHTML = "Searching...";
+
+            try {
+                const response = await fetch(`${API_URL}/query`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text, k: 3 })
+                });
+
+                const data = await response.json();
+                resultsArea.innerHTML = ""; // Clear loading text
+
+                if (data.results && data.results.length > 0) {
+                    data.results.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = "result-item";
+                        // Display the Score and the Original Text
+                        // Note: We safely handle cases where metadata might be missing
+                        const originalText = item.metadata ? item.metadata.text : "[No text saved]";
+                        div.innerHTML = `
+                            <div>${originalText}</div>
+                            <div class="score">Similarity: ${(item.score * 100).toFixed(1)}%</div>
+                        `;
+                        resultsArea.appendChild(div);
+                    });
+                } else {
+                    resultsArea.innerHTML = "<p>No matches found.</p>";
+                }
+            } catch (e) {
+                resultsArea.innerText = "❌ Error: " + e;
+            }
+        }
+    </script>
+</body>
+</html>
